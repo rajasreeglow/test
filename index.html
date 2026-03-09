@@ -1,162 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Rajasree | Web Developer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: #fff;
-    }
-
-    .container {
-      max-width: 1000px;
-      padding: 40px 20px;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 10px;
-    }
-
-    h1 span {
-      color: #00e6e6;
-    }
-
-    .subtitle {
-      font-size: 1.3rem;
-      margin-bottom: 40px;
-      opacity: 0.9;
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 30px;
-      max-width: 700px;
-      margin: auto;
-    }
-
-    .skills {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    .skill {
-      padding: 12px 22px;
-      border-radius: 25px;
-      background: #00e6e6;
-      color: #003333;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-      user-select: none;
-    }
-
-    .skill:hover,
-    .skill.active {
-      background: #00cccc;
-      transform: scale(1.1);
-    }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-content {
-      background: #fff;
-      color: #003333;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-      animation: slideUp 0.3s ease;
-    }
-
-    .modal-content h2 {
-      margin-top: 0;
-      color: #0f2027;
-    }
-
-    .close-btn {
-      margin-top: 20px;
-      padding: 8px 18px;
-      border: none;
-      border-radius: 20px;
-      background: #0f2027;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Hamster Run 🐹</title>
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  overflow: hidden;
+}
+h1 { margin: 10px; }
+#game {
+  position: relative;
+  width: 600px;
+  height: 300px;
+  margin: 20px auto;
+  border: 3px solid #333;
+  background: #fff;
+  border-radius: 15px;
+  overflow: hidden;
+}
+.hamster {
+  position: absolute;
+  bottom: 10px;
+  left: 50px;
+  font-size: 50px;
+}
+.obstacle {
+  position: absolute;
+  bottom: 10px;
+  width: 40px;
+  height: 40px;
+  background: #ff7043;
+  border-radius: 10px;
+}
+#scoreboard { margin-top: 10px; font-size: 18px; }
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: #ff7f50;
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+}
+</style>
 </head>
 <body>
 
-    <div class="card">
-      <div class="skills">
-        <div class="skill" onclick="openModal(this,'HTML','HyperText Markup Language')">HTML</div>
-        <div class="skill" onclick="openModal(this,'CSS','Cascading Style Sheets')">CSS</div>
-        <div class="skill" onclick="openModal(this,'JS','JavaScript')">JS</div>
-        <div class="skill" onclick="openModal(this,'DSA','Data Structures and Algorithms')">DSA</div>
-      </div>
-    </div>
-  </div>
+<h1>Hamster Run 🐹</h1>
+<div id="game">
+  <div class="hamster" id="hamster">🐹</div>
+</div>
+<div id="scoreboard">Score: 0</div>
+<button onclick="startGame()">Start Game</button>
+<p>Press <b>Spacebar</b> or click Jump to jump</p>
+<button onclick="jump()">Jump</button>
 
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <h2 id="modalTitle"></h2>
-      <p id="modalText"></p>
-      <button class="close-btn" onclick="closeModal()">Close</button>
-    </div>
-  </div>
+<script>
+const game = document.getElementById("game");
+const hamster = document.getElementById("hamster");
+const scoreboard = document.getElementById("scoreboard");
 
-  <script>
-    function openModal(element, title, text) {
-      document.querySelectorAll('.skill')
-        .forEach(s => s.classList.remove('active'));
+let hamsterBottom = 10;
+let isJumping = false;
+let obstacles = [];
+let score = 0;
+let gameInterval;
+let spawnInterval;
+let speed = 5;
+let gameOverFlag = false;
 
-      element.classList.add('active');
+document.addEventListener("keydown", e => {
+  if(e.code === "Space") jump();
+});
 
-      document.getElementById('modalTitle').innerText = title;
-      document.getElementById('modalText').innerText =
-        title + " stands for " + text + ".";
+function jump() {
+  if(isJumping || gameOverFlag) return;
+  isJumping = true;
+  let up = setInterval(() => {
+    if(hamsterBottom >= 150) clearInterval(up);
+    else hamsterBottom += 10;
+    hamster.style.bottom = hamsterBottom + "px";
+  },20);
 
-      document.getElementById('modal').style.display = 'flex';
+  setTimeout(() => {
+    let down = setInterval(() => {
+      if(hamsterBottom <= 10) { clearInterval(down); isJumping = false; }
+      else { hamsterBottom -= 10; hamster.style.bottom = hamsterBottom + "px"; }
+    },20);
+  }, 400);
+}
+
+function spawnObstacle() {
+  const obs = document.createElement("div");
+  obs.className = "obstacle";
+  obs.style.left = "600px";
+  game.appendChild(obs);
+  obstacles.push(obs);
+}
+
+function moveObstacles() {
+  obstacles.forEach((obs,i) => {
+    let left = parseInt(obs.style.left);
+    if(left < -40) { 
+      game.removeChild(obs); 
+      obstacles.splice(i,1); 
+      score++; // increase score for each obstacle passed
+      updateScore();
     }
+    else obs.style.left = (left - speed) + "px";
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-      document.querySelectorAll('.skill')
-        .forEach(s => s.classList.remove('active'));
+    // collision
+    if(left < 100 && left > 50 && hamsterBottom < 50) {
+      endGame();
     }
+  });
+}
 
-    document.addEventListener('keydown', function(e) {
-      if (e.key === "Escape") closeModal();
-    });
-  </script>
+function updateScore() { scoreboard.textContent = "Score: " + score; }
+
+function startGame() {
+  // reset
+  obstacles.forEach(o=>game.removeChild(o));
+  obstacles=[];
+  hamsterBottom=10;
+  hamster.style.bottom = hamsterBottom + "px";
+  score=0; gameOverFlag=false;
+  updateScore();
+  speed=5;
+
+  spawnInterval = setInterval(spawnObstacle, 1500);
+  gameInterval = setInterval(() => {
+    moveObstacles();
+    speed += 0.001; // gradually increase speed
+  }, 20);
+}
+
+function endGame() {
+  clearInterval(gameInterval);
+  clearInterval(spawnInterval);
+  gameOverFlag=true;
+  alert("Game Over! Score: " + score);
+}
+</script>
 
 </body>
 </html>
