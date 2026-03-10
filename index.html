@@ -3,147 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <title>Hamster Run 🐹</title>
+
 <style>
-body {
-  font-family: Arial;
-  text-align: center;
-  background: linear-gradient(135deg, #ffecd2, #fcb69f);
-  overflow: hidden;
+
+body{
+    text-align:center;
+    font-family:Arial;
+    background:linear-gradient(#87CEEB,#ffffff); /* SKY BACKGROUND */
 }
-h1 { margin: 10px; }
-#game {
-  position: relative;
-  width: 600px;
-  height: 300px;
-  margin: 20px auto;
-  border: 3px solid #333;
-  background: #fff;
-  border-radius: 15px;
-  overflow: hidden;
+
+/* Game area */
+
+#game{
+    width:600px;
+    height:200px;
+    border:3px solid black;
+    margin:auto;
+    position:relative;
+    overflow:hidden;
+    background:#d4f4ff; /* GAME BACKGROUND COLOR */
 }
-.hamster {
-  position: absolute;
-  bottom: 10px;
-  left: 50px;
-  font-size: 50px;
+
+/* Ground */
+
+#ground{
+    width:100%;
+    height:20px;
+    background:#6b4f2a;
+    position:absolute;
+    bottom:0;
 }
-.obstacle {
-  position: absolute;
-  bottom: 10px;
-  width: 40px;
-  height: 40px;
-  background: #ff7043;
-  border-radius: 10px;
+
+/* Hamster */
+
+#hamster{
+    font-size:40px;
+    position:absolute;
+    bottom:20px;
+    left:50px;
 }
-#scoreboard { margin-top: 10px; font-size: 18px; }
-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  background: #ff7f50;
-  color: white;
-  cursor: pointer;
-  margin-top: 10px;
+
+/* Obstacle */
+
+#block{
+    width:30px;
+    height:40px;
+    background:#ff4444;
+    position:absolute;
+    bottom:20px;
+    right:-30px;
 }
+
+/* Jump animation */
+
+.jump{
+    animation:jump 0.6s linear;
+}
+
+@keyframes jump{
+    0%{bottom:20px;}
+    40%{bottom:110px;}
+    60%{bottom:110px;}
+    100%{bottom:20px;}
+}
+
+button{
+    margin:10px;
+    padding:10px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
 </style>
 </head>
+
 <body>
 
-<h1>Hamster Run 🐹</h1>
+<h2>🐹 Hamster Run Game</h2>
+
 <div id="game">
-  <div class="hamster" id="hamster">🐹</div>
+
+    <div id="hamster">🐹</div>
+    <div id="block"></div>
+    <div id="ground"></div>
+
 </div>
-<div id="scoreboard">Score: 0</div>
-<button onclick="startGame()">Start Game</button>
-<p>Press <b>Spacebar</b> or click Jump to jump</p>
+
+<br>
+
+<button onclick="startGame()">Start</button>
 <button onclick="jump()">Jump</button>
 
+<h3 id="score">Score: 0</h3>
+
 <script>
-const game = document.getElementById("game");
-const hamster = document.getElementById("hamster");
-const scoreboard = document.getElementById("scoreboard");
 
-let hamsterBottom = 10;
-let isJumping = false;
-let obstacles = [];
+let hamster = document.getElementById("hamster");
+let block = document.getElementById("block");
+let scoreText = document.getElementById("score");
+
+let blockPos = 600;
+let gameRunning = false;
 let score = 0;
-let gameInterval;
-let spawnInterval;
-let speed = 5;
-let gameOverFlag = false;
 
-document.addEventListener("keydown", e => {
-  if(e.code === "Space") jump();
+/* Jump */
+
+function jump(){
+
+    if(!hamster.classList.contains("jump")){
+        hamster.classList.add("jump");
+
+        setTimeout(()=>{
+            hamster.classList.remove("jump");
+        },600);
+    }
+
+}
+
+/* Start Game */
+
+function startGame(){
+
+    if(gameRunning) return;
+
+    gameRunning = true;
+    score = 0;
+
+    let gameLoop = setInterval(()=>{
+
+        blockPos -= 5;
+
+        if(blockPos < -30){
+            blockPos = 600;
+            score++;
+            scoreText.innerText = "Score: " + score;
+        }
+
+        block.style.right = (600 - blockPos) + "px";
+
+        let hamsterBottom = parseInt(window.getComputedStyle(hamster).getPropertyValue("bottom"));
+
+        if(blockPos < 120 && blockPos > 60 && hamsterBottom < 50){
+            alert("Game Over 🐹\nScore: " + score);
+            blockPos = 600;
+            block.style.right = "0px";
+            gameRunning = false;
+            clearInterval(this);
+        }
+
+    },20);
+
+}
+
+/* Keyboard control */
+
+document.addEventListener("keydown",(e)=>{
+    if(e.code === "Space"){
+        jump();
+    }
 });
 
-function jump() {
-  if(isJumping || gameOverFlag) return;
-  isJumping = true;
-  let up = setInterval(() => {
-    if(hamsterBottom >= 150) clearInterval(up);
-    else hamsterBottom += 10;
-    hamster.style.bottom = hamsterBottom + "px";
-  },20);
-
-  setTimeout(() => {
-    let down = setInterval(() => {
-      if(hamsterBottom <= 10) { clearInterval(down); isJumping = false; }
-      else { hamsterBottom -= 10; hamster.style.bottom = hamsterBottom + "px"; }
-    },20);
-  }, 400);
-}
-
-function spawnObstacle() {
-  const obs = document.createElement("div");
-  obs.className = "obstacle";
-  obs.style.left = "600px";
-  game.appendChild(obs);
-  obstacles.push(obs);
-}
-
-function moveObstacles() {
-  obstacles.forEach((obs,i) => {
-    let left = parseInt(obs.style.left);
-    if(left < -40) { 
-      game.removeChild(obs); 
-      obstacles.splice(i,1); 
-      score++; // increase score for each obstacle passed
-      updateScore();
-    }
-    else obs.style.left = (left - speed) + "px";
-
-    // collision
-    if(left < 100 && left > 50 && hamsterBottom < 50) {
-      endGame();
-    }
-  });
-}
-
-function updateScore() { scoreboard.textContent = "Score: " + score; }
-
-function startGame() {
-  // reset
-  obstacles.forEach(o=>game.removeChild(o));
-  obstacles=[];
-  hamsterBottom=10;
-  hamster.style.bottom = hamsterBottom + "px";
-  score=0; gameOverFlag=false;
-  updateScore();
-  speed=5;
-
-  spawnInterval = setInterval(spawnObstacle, 1500);
-  gameInterval = setInterval(() => {
-    moveObstacles();
-    speed += 0.001; // gradually increase speed
-  }, 20);
-}
-
-function endGame() {
-  clearInterval(gameInterval);
-  clearInterval(spawnInterval);
-  gameOverFlag=true;
-  alert("Game Over! Score: " + score);
-}
 </script>
 
 </body>
